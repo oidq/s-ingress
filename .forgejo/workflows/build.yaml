@@ -1,4 +1,4 @@
-name: Build
+name: Build images
 
 on:
   push:
@@ -17,9 +17,9 @@ jobs:
         run: 'podman login ${{ env.REGISTRY }} -u "${{ secrets.REGISTRY_USER}}" -p "${{secrets.REGISTRY_PASS}}"'
       - name: Checkout
         uses: https://code.forgejo.org/actions/checkout@v3
-      - name: Push image
+      - name: Create manifest
         run: 'podman manifest create ${{ env.IMAGE }}:${{ env.FORGEJO_SHA }}'
-      - name: Build image
+      - name: Build images
         run: 'podman build --platform linux/amd64,linux/arm64 --manifest ${{ env.IMAGE }}:${{ env.FORGEJO_SHA }} .'
-      - name: Push image
+      - name: Push manifest
         run: 'podman manifest push ${{ env.IMAGE }}:${{ env.FORGEJO_SHA }}'
