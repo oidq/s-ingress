@@ -1,7 +1,5 @@
 # S-Ingress
 
-<a href="https://opensource.org/license/agpl"><img src="https://img.shields.io/badge/License-AGPL_v3-blue.svg?style=for-the-badge" alt="License: AGPLv3"></a>
-
 S-Ingress is a simple Kubernetes Ingress Controller implementation written in pure Go.
 It was created from scratch to serve as a replacement of
 [ingress-nginx](https://github.com/kubernetes/ingress-nginx).
