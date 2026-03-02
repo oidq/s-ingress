@@ -1,0 +1,20 @@
+name: Run golangci-lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  golangci:
+    runs-on: podman
+    steps:
+      - name: Install Go
+        uses: 'https://code.forgejo.org/actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417'
+        with:
+          go-version: '1.26'
+      - name: Checkout
+        uses: 'https://code.forgejo.org/actions/checkout@v3'
+      - name: Run golangci-lint
+        uses: 'https://github.com/golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20' # v9.2.0
+        with:
+          version: v2.10

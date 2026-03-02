@@ -1,0 +1,37 @@
+# Upstream service name is used just to fill Ingress' Status.
+upstreamServiceName: ""
+
+# Setup of TCP proxies, note that they must be reflected
+# in deployment and service accordingly.
+tcpProxy: []
+  # - serviceName: "git-ssh"
+  #   serviceNamespace: "git"
+  #   servicePortName: ssh
+  #   port: 2222
+
+# Module-related configuration.
+module:
+
+  # Security module
+  security:
+    # Enforce HTTPS globally.
+    enforceHttps: true
+
+  # Auth module
+  auth:
+    # Shared auth configuration for subrequest authorization
+    configurations: {}
+      #oauth2-int:
+      #  authUrl: http://oauth2-proxy-int.s-ingress-int.svc.int.k8s.oidq.dev/_oauth2/auth
+      #  signInUrl: https://auth.int.oidq.dev/_oauth2/start?rd=https%3A%2F%2F$host$escaped_uri
+
+# Proxy-related configuration.
+proxy:
+  # Error page template, see pkg/proxy/error.go for details about the structure passwd to html/template.
+  maxBodySize: 4096
+  # errorPage: |
+
+# TLS configuration
+tls:
+  # Secret name of defaults TLS certificate which would be used if no other matches.
+  defaultTlsSecret: ""

@@ -1,0 +1,72 @@
+replicaCount: 1
+
+image:
+  repository: codeberg.org/oidq/s-ingress
+  pullPolicy: Always
+  tag: ""
+
+tcpProxy: []
+  #- name: "ssh"
+  #  port: 22
+  #  podPort: 2332
+  #  serviceName: "service"
+  #  serviceNamespace: "namespace"
+  #  servicePortName: "ssh"
+
+configuration:
+  tls: {}
+
+ingressClass:
+  create: true
+  name: ""
+  default: false
+  controller: "oidq.dev/s-ingress"
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+
+service:
+  type: ClusterIP
+  externalTrafficPolicy: ""
+  loadBalancerIP: ""
+  annotations: {}
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8000
+  initialDelaySeconds: 3
+  periodSeconds: 3
+livenessProbe:
+  httpGet:
+    path: /livez
+    port: 8000
+  initialDelaySeconds: 3
+  periodSeconds: 3

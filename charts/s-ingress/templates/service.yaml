@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "s-ingress.fullname" . }}
+  labels:
+    {{- include "s-ingress.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: 443
+      targetPort: https
+      protocol: TCP
+      name: https
+    - name: quic
+      protocol: UDP
+      port: 443
+      targetPort: quic
+    {{- range .Values.tcpProxy }}
+    - name: "{{ .name }}"
+      protocol: TCP
+      port: {{ .port }}
+      targetPort: {{ .podPort }}
+    {{- end }}
+  selector:
+    {{- include "s-ingress.selectorLabels" . | nindent 4 }}

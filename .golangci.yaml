@@ -1,0 +1,17 @@
+version: "2"
+linters:
+  enable:
+    - copyloopvar
+    - cyclop
+  settings:
+    # See the dedicated "linters.settings" documentation section.
+    errcheck:
+      exclude-functions:
+        - (*net.conn).Close
+        - (*net/http.ClientConn).Close
+        - (io.ReadCloser).Close
+
+  exclusions:
+    generated: lax
+    warn-unused: true
+    rules: []

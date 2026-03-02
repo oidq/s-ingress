@@ -1,0 +1,24 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-image:
+    runs-on: podman
+    env:
+      REGISTRY: "codeberg.org"
+      IMAGE: "codeberg.org/oidq/s-ingress"
+    steps:
+      - name: Login to packages
+        run: 'podman login ${{ env.REGISTRY }} -u "${{ secrets.REGISTRY_USER}}" -p "${{secrets.REGISTRY_PASS}}"'
+      - name: Checkout
+        uses: https://code.forgejo.org/actions/checkout@v3
+      - name: Push image
+        run: 'podman manifest create ${{ env.IMAGE }}:${{ env.FORGEJO_SHA }}'
+      - name: Build image
+        run: 'podman build --platform linux/amd64,linux/arm64 --manifest ${{ env.IMAGE }}:${{ env.FORGEJO_SHA }} .'
+      - name: Push image
+        run: 'podman manifest push ${{ env.IMAGE }}:${{ env.FORGEJO_SHA }}'

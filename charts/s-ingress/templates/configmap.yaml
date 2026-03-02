@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "s-ingress.fullname" . }}
+data:
+  config.yaml: |
+    upstreamServiceName: "{{ include "s-ingress.fullname" . }}"
+    {{- with .Values.tcpProxy }}
+    tcpProxy:
+    {{- range . }}
+    - serviceName: "{{ .serviceName }}"
+      serviceNamespace: "{{ .serviceNamespace  }}"
+      servicePortName: {{ .servicePortName }}
+      port: {{ .podPort }}
+    {{- end }}
+    {{- end }}
+    {{- toYaml .Values.configuration | nindent 4 }}
