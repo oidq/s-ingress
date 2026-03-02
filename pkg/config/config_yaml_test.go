@@ -7,9 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//go:embed config.yaml
-var config []byte
-
 func TestDefaultConfig_valid(t *testing.T) {
 	_, err := ParseYamlConfigWithDefault(nil)
 	require.NoError(t, err)
