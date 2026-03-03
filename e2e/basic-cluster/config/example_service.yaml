@@ -1,0 +1,25 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: example-app
+  labels:
+    app: example
+spec:
+  containers:
+    - command:
+        - /agnhost
+        - serve-hostname
+        - --http=true
+        - --port=8080
+      image: registry.k8s.io/e2e-test-images/agnhost:2.39
+      name: bar-app
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: example-service
+spec:
+  selector:
+    app: example
+  ports:
+    - port: 8080

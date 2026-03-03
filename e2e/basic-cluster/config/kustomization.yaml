@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+helmGlobals:
+  chartHome: ../../../charts
+
+helmCharts:
+  # Int
+  - name: s-ingress
+    namespace: s-ingress
+    releaseName: s-ingress
+    version: "0.1.0"
+    valuesFile: values.yaml
+
+resources:
+  - example_ingress.yaml
+  - example_service.yaml
+  - s-ingress-tls.yaml
+  - namespace.yaml

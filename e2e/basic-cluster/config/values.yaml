@@ -1,0 +1,18 @@
+image:
+  tag: "local"
+  pullPolicy: "Never"
+
+service:
+  type: NodePort
+
+ingressClass:
+  controller: "oidq.dev/s-ingress"
+
+tcpProxy: []
+
+configuration:
+  tls:
+    defaultTlsSecret: "s-ingress-tls"
+  module:
+    security:
+      enforceHttps: true
