@@ -113,6 +113,7 @@ func proxyRoute(rCtx *RequestContext, endpoint *RouteConfig) error {
 		return fmt.Errorf("failed to create upstream request: %w", err)
 	}
 
+	proxiedR.ContentLength = rCtx.R.ContentLength
 	proxiedR.Header = rCtx.R.Header.Clone()
 	proxiedR.Header.Set("X-Request-Id", rCtx.RequestId)
 	proxiedR.Header.Set("X-Forwarded-For", rCtx.RemoteIp.String())
