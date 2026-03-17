@@ -43,6 +43,7 @@ type RequestContext struct {
 	UpstreamAddress netip.AddrPort
 
 	routingConfig  *RoutingConfig
+	writer         *ResponseWriter
 	originalWriter http.ResponseWriter
 	responseHeader http.Header
 }

@@ -59,6 +59,9 @@ spec:
             - name: quic
               protocol: UDP
               containerPort: 8444
+            - name: metrics
+              protocol: TCP
+              containerPort: 8000
             {{- range .Values.tcpProxy }}
             - name: "{{ .name }}"
               protocol: TCP

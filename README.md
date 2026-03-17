@@ -22,6 +22,8 @@ and HTTP/3 (via [quic-go](https://quic-go.net/)) and features some more advanced
 Additionally, it is capable of TCP proxying with [PROXY](https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt)
 protocol. Websockets are also supported by default.
 
+The S-Ingress has basic support for the Prometheus metrics.
+
 ### TODO
 
 - Ingress API

@@ -12,6 +12,8 @@ import (
 	"codeberg.org/oidq/s-ingress/pkg/controller"
 	"codeberg.org/oidq/s-ingress/pkg/proxy"
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -40,6 +42,8 @@ func main() {
 		controllerName = "oidq.dev/s-ingress"
 	}
 
+	reg := initPrometheus()
+
 	mgr, err := initManager(slogHandler)
 	if err != nil {
 		l.Error("unable to initialize manager", slog.String("error", err.Error()))
@@ -47,6 +51,7 @@ func main() {
 	}
 
 	p := proxy.NewProxy(l.With("event.source", "proxy"))
+	p.WithMetrics(reg)
 
 	c := controller.NewProxyController(
 		l.With("event.source", "controller"),
@@ -103,6 +108,15 @@ func initSlogHandler() slog.Handler {
 		Level:     slog.Level(-1),
 	}
 	return slog.NewJSONHandler(os.Stderr, &opts)
+}
+
+func initPrometheus() *prometheus.Registry {
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
+	return reg
 }
 
 func initManager(slogHandler slog.Handler) (manager.Manager, error) {

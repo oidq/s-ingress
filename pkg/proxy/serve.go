@@ -42,13 +42,15 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	writer := &ResponseWriter{ResponseWriter: w}
 	rCtx := &RequestContext{
-		R:             r,
-		W:             writer,
-		ServerCtx:     p.serverCtx,
-		RequestId:     requestId,
-		Log:           l,
-		RemoteIp:      remoteIp,
-		routingConfig: routingConfig,
+		R:              r,
+		W:              writer,
+		ServerCtx:      p.serverCtx,
+		RequestId:      requestId,
+		Log:            l,
+		RemoteIp:       remoteIp,
+		writer:         writer,
+		originalWriter: w,
+		routingConfig:  routingConfig,
 	}
 
 	fillRealIp(rCtx)
@@ -61,8 +63,10 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		l.Log(rCtx, slog.LevelError, "failed to proxy", slog.String("err", err.Error()))
 	}
 
+	duration := time.Since(t0)
+	p.metrics.recordRequest(rCtx, duration)
 	rCtx.Log.Log(rCtx, slog.LevelInfo,
-		fmt.Sprintf("%s %s - %d (%s)", r.Method, r.URL.Path, writer.writtenStatusCode, time.Since(t0)),
+		fmt.Sprintf("%s %s - %d (%s)", r.Method, r.URL.Path, writer.writtenStatusCode, duration),
 		slog.Int("http.response.status_code", writer.writtenStatusCode),
 	)
 }

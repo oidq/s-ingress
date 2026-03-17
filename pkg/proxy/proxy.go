@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"sync/atomic"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const ShutdownPropagationTimeout = 5 * time.Second
@@ -24,6 +26,7 @@ type Proxy struct {
 	ready atomic.Bool
 
 	config        config
+	metrics       *metrics
 	routingConfig atomic.Pointer[RoutingConfig]
 }
 
@@ -218,6 +221,7 @@ func (p *Proxy) getStatusHandler() http.Handler {
 
 		writer.WriteHeader(http.StatusNoContent)
 	}))
+	server.Handle("/metrics", promhttp.HandlerFor(p.metrics.reg, promhttp.HandlerOpts{}))
 
 	return server
 }
