@@ -12,9 +12,9 @@ ARG TARGETOS
 ARG TARGETARCH
 RUN echo "Building the binary for $TARGETOS/$TARGETARCH"
 RUN --mount=type=cache,target="/root/.cache/go-build" \
-    GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go build -o ./sgateway ./cmd/
+    GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go build -o ./s-ingress ./cmd/
 
 FROM scratch
 
-COPY --from=build /app/sgateway /sgateway
-ENTRYPOINT ["/sgateway"]
+COPY --from=build /app/s-ingress /s-ingress
+ENTRYPOINT ["/s-ingress"]

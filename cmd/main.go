@@ -46,13 +46,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	p := proxy.NewProxy(l)
+	p := proxy.NewProxy(l.With("event.source", "proxy"))
 
-	c := controller.NewProxyController(l, mgr.GetClient(), config.ControllerEnvConf{
-		Namespace:           namespace,
-		ControllerName:      controllerName,
-		ControllerConfigMap: types.NamespacedName{Namespace: namespace, Name: controllerConfigMap},
-	})
+	c := controller.NewProxyController(
+		l.With("event.source", "controller"),
+		mgr.GetClient(),
+		config.ControllerEnvConf{
+			Namespace:           namespace,
+			ControllerName:      controllerName,
+			ControllerConfigMap: types.NamespacedName{Namespace: namespace, Name: controllerConfigMap},
+		},
+	)
 	c.SetReconfigureChan(p.ConfigChan())
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -103,7 +107,9 @@ func initSlogHandler() slog.Handler {
 
 func initManager(slogHandler slog.Handler) (manager.Manager, error) {
 	logrLogger := logr.FromSlogHandler(slogHandler)
-	log.SetLogger(logrLogger)
+	log.SetLogger(
+		logrLogger.WithValues("event.source", "controller"),
+	)
 
 	conf, err := rest.InClusterConfig()
 	if err != nil {

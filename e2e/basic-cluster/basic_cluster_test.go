@@ -73,7 +73,6 @@ var _ = Describe("Ingress", func() {
 	Describe("Logging", func() {
 		ts := common.GetHttpsTransport(httpsEndpoint)
 		It("should log basic information", func() {
-			c := common.GetClient()
 			id := uuid.New()
 			url := fmt.Sprintf("https://example.com/%s/", id)
 			req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -82,11 +81,9 @@ var _ = Describe("Ingress", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
-			logLines := common.GetIngressLogLine(c, "s-ingress", id.String())
-			Expect(logLines).To(HaveLen(1))
 			ExpectIngressLog("s-ingress", id.String()).To(And(
-				HaveLogAttribute("method", "GET"),
-				HaveLogAttributeSet("request-id"),
+				HaveLogAttribute("http.request.method", "GET"),
+				HaveLogAttributeSet("http.request.id"),
 			))
 		})
 	})

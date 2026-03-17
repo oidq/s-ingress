@@ -14,6 +14,11 @@ push-image: build-image
 start:
 	kind create cluster --name ${CLUSTER} --config=${CLUSTER_DIR}/cluster.yaml --kubeconfig=${KUBECONFIG}
 
+redeploy: push-image
+	${KUBECTL} kustomize --enable-helm ${CLUSTER_DIR}/config --helm-command ~/bin/helm/helm | ${KUBECTL} apply -f -
+	${KUBECTL} rollout restart deployment -n s-ingress -l app.kubernetes.io/instance=s-ingress
+	${KUBECTL} wait --for=condition=Ready -A --all pod
+
 deploy: push-image
 	${KUBECTL} kustomize --enable-helm ${CLUSTER_DIR}/config --helm-command ~/bin/helm/helm | ${KUBECTL} apply -f -
 	${KUBECTL} wait --for=condition=Ready -n s-ingress --all pod
@@ -28,3 +33,5 @@ destroy:
 clean: destroy
 
 e2e: start deploy run-test
+
+retest: redeploy run-test

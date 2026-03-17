@@ -39,7 +39,7 @@ func (wm *customHeaderModule) IngressMiddleware(reconciler config.IngressReconci
 				continue
 			}
 
-			rCtx.W.Header().Set(headerName, headerValue)
+			rCtx.ResponseHeader().Set(headerName, headerValue)
 		}
 
 		return next(rCtx)

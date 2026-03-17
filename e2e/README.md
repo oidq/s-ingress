@@ -25,6 +25,9 @@ Target `clean` should dismantle the kind cluster.
 # setup everything and run tests
 make e2e
 
+# redeploy s-ingress and rerun tests (the cluster must be running)
+make retest
+
 # run just tests
 make run-test
 

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -20,10 +21,17 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	remoteIp := getRemoteIp(r)
 
 	l := p.log.With(
-		slog.String("request-id", requestId),
-		slog.String("url", r.URL.Path),
-		slog.String("method", r.Method),
-		slog.String("host", r.Host),
+		slog.String("network.peer.address", remoteIp.Addr().String()),
+		slog.Uint64("network.peer.port", uint64(remoteIp.Port())),
+
+		slog.String("http.request.method", r.Method),
+		slog.String("http.request.id", requestId),
+
+		slog.String("url.domain", r.Host),
+		slog.String("url.path", r.URL.Path),
+
+		slog.String("network.protocol.name", "http"),
+		slog.String("network.protocol.version", strconv.Itoa(r.ProtoMajor)),
 	)
 
 	routingConfig := p.routingConfig.Load()
@@ -44,7 +52,9 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fillRealIp(rCtx)
-	rCtx.Log = rCtx.Log.With(slog.String("realIp", rCtx.RealIp.String()))
+	rCtx.Log = rCtx.Log.With(
+		slog.String("client.address", rCtx.RealIp.String()),
+	)
 
 	err := callMiddleware(rCtx, routingConfig.RequestMiddlewares, handleHttp)
 	if err != nil {
@@ -52,9 +62,8 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rCtx.Log.Log(rCtx, slog.LevelInfo,
-		fmt.Sprintf("%s %s - %d", r.Method, r.URL.Path, writer.writtenStatusCode),
-		slog.String("duration", time.Since(t0).String()),
-		slog.Int("response-code", writer.writtenStatusCode),
+		fmt.Sprintf("%s %s - %d (%s)", r.Method, r.URL.Path, writer.writtenStatusCode, time.Since(t0)),
+		slog.Int("http.response.status_code", writer.writtenStatusCode),
 	)
 }
 
@@ -93,7 +102,11 @@ func handleHost(rCtx *RequestContext, host *HostConfig) error {
 // proxyRoute handles the proxying to the endpoint and returns an error.
 // The response is always written after calling this function, so there is no need to try.
 func proxyRoute(rCtx *RequestContext, endpoint *RouteConfig) error {
-	rCtx.Log = rCtx.Log.With(slog.String("ingress", endpoint.IngressName))
+	rCtx.Log = rCtx.Log.With(
+		slog.String("http.route", endpoint.Path),
+		slog.String("http.ingress", endpoint.IngressName),
+	)
+
 	u, err := getUpstreamUrl(rCtx)
 	if err != nil {
 		return err
@@ -109,8 +122,7 @@ func proxyRoute(rCtx *RequestContext, endpoint *RouteConfig) error {
 
 	proxiedR, err := http.NewRequestWithContext(rCtx.R.Context(), rCtx.R.Method, u.String(), writer)
 	if err != nil {
-		rCtx.W.WriteHeader(http.StatusInternalServerError)
-		return fmt.Errorf("failed to create upstream request: %w", err)
+		return rCtx.HandleErrorf(http.StatusInternalServerError, "failed to create upstream request: %v", err)
 	}
 
 	proxiedR.ContentLength = rCtx.R.ContentLength

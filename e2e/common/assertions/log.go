@@ -3,7 +3,6 @@ package assertions
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"codeberg.org/oidq/s-ingress/e2e/common"
 	"github.com/onsi/gomega/types"
@@ -73,25 +72,6 @@ func HaveLogAttributeSet(key string) types.GomegaMatcher {
 	}
 }
 
-func matchMapKey(m any, key string) any {
-	if key == "" {
-		return m
-	}
-
-	assertedM, ok := m.(map[string]any)
-	if !ok {
-		return nil
-	}
-
-	split := strings.SplitN(key, ".", 2)
-	if len(split) < 2 {
-		split = append(split, "")
-	}
-
-	entry := assertedM[split[0]]
-	return matchMapKey(entry, split[1])
-}
-
 func getLogLineValue(line any, key string) (any, error) {
 	s, ok := line.(string)
 	if !ok {
@@ -104,7 +84,12 @@ func getLogLineValue(line any, key string) (any, error) {
 		return nil, err
 	}
 
-	return matchMapKey(data, key), nil
+	v, ok := data[key]
+	if !ok {
+		return nil, fmt.Errorf("key %q not found in data", key)
+	}
+
+	return v, nil
 }
 
 func tryFormat(value any) string {
