@@ -65,6 +65,12 @@ See [config.yaml](./pkg/config/config.yaml) for commented YAML configuration.
 
 Some aspects of the proxying can be manipulated per Ingress object with Kubernetes annotations.
 
+##### Maximum request body size
+
+```yaml
+s-ingress.oidq.dev/max-body: "4KiB"
+```
+
 #### Auth
 
 ##### IP Authorization

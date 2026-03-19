@@ -62,7 +62,6 @@ func (ic *IngressController) getProxyConfig() (*proxy.RoutingConfig, error) {
 	proxyConfig := &proxy.RoutingConfig{
 		Hosts:                 map[string]*proxy.HostConfig{},
 		TlsCertificates:       map[string]*tls.Certificate{},
-		MaxBodySize:           30 * 1024 * 1024,
 		DefaultTlsCertificate: state.defaultTlsSecret,
 		TrustedProxies:        state.config.GeneralProxy.TrustedProxies,
 		ErrorPage:             state.config.GeneralProxy.ErrorPage,
@@ -297,17 +296,50 @@ func addPath(
 		return err
 	}
 
+	httpProxyConf, err := getHttpProxyConfig(ingress, controllerConf.IngressProxy)
+	if err != nil {
+		return err
+	}
+
 	host.AddRoute(&proxy.RouteConfig{
-		Path:        path.Path,
-		PathType:    pathType,
-		Endpoint:    netip.AddrPortFrom(ipNet, uint16(port)),
-		Middlewares: middlewares,
-		IngressName: objectMetaToNamespaced(ingress).String(),
+		Path:            path.Path,
+		PathType:        pathType,
+		Endpoint:        netip.AddrPortFrom(ipNet, uint16(port)),
+		Middlewares:     middlewares,
+		HttpProxyConfig: httpProxyConf,
+		IngressName:     objectMetaToNamespaced(ingress).String(),
 	})
 
 	ingressConf.Hosts[hostname] = host
 
 	return nil
+}
+
+func getHttpProxyConfig(ingress *netv1.Ingress, conf config.IngressProxyConf) (proxy.HttpProxyConfig, error) {
+	var err error
+	proxyConf := proxy.HttpProxyConfig{}
+
+	proxyConf.MaxBodySize, err = parseAnnotation(ingress, "s-ingress.oidq.dev/max-body",
+		config.ParseByteSize, conf.MaxBodySize)
+	if err != nil {
+		return proxyConf, err
+	}
+
+	return proxyConf, nil
+}
+
+func parseAnnotation[T any](ingress *netv1.Ingress, name string, parseF func(string) (T, error), defaultValue T) (T, error) {
+	value, ok := ingress.Annotations[name]
+	if !ok {
+		return defaultValue, nil
+	}
+
+	parsedValue, err := parseF(value)
+	if err != nil {
+		return defaultValue, fmt.Errorf("parse annotation %s: %s", name, err)
+	}
+
+	return parsedValue, nil
 }
 
 func getServiceAddrPort(ctx context.Context, k8sClient client.Client, serviceName types.NamespacedName, portName string) (netip.AddrPort, error) {

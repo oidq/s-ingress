@@ -28,7 +28,7 @@ module:
 # Proxy-related configuration.
 proxy:
   # Error page template, see pkg/proxy/error.go for details about the structure passwd to html/template.
-  maxBodySize: 4096
+  maxBodySize: "8K"
   # errorPage: |
 
 # TLS configuration

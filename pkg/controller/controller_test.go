@@ -31,7 +31,7 @@ type testContext struct {
 
 func setupTestContext(t *testing.T, nsName string, controllerName string, configYaml string) *testContext {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
-		t.Skip()
+		t.Skip("KUBEBUILDER_ASSETS not set")
 	}
 
 	ctx := t.Context()

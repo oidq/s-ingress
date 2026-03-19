@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"html/template"
 	"net/netip"
+	"regexp"
+	"strconv"
+	"strings"
 
 	_ "embed"
 
@@ -40,7 +43,7 @@ type controllerConf struct {
 }
 
 type proxyConf struct {
-	MaxBodySize    int64    `yaml:"maxBodySize"`
+	MaxBodySize    string   `yaml:"maxBodySize"`
 	TrustedProxies []string `yaml:"trustedProxies"`
 	ErrorPage      string   `yaml:"errorPage"`
 }
@@ -139,9 +142,15 @@ func parseProxyTlsConf(conf controllerTlsConf) (ControllerTlsConf, error) {
 }
 
 func parseProxyIngressConf(conf proxyConf) (IngressProxyConf, error) {
+	var err error
 	result := IngressProxyConf{}
-	result.MaxBodySize = conf.MaxBodySize
-	if result.MaxBodySize == 0 {
+
+	if conf.MaxBodySize != "" {
+		result.MaxBodySize, err = ParseByteSize(conf.MaxBodySize)
+		if err != nil {
+			return result, fmt.Errorf("proxy config: %w", err)
+		}
+	} else {
 		result.MaxBodySize = 4096
 	}
 
@@ -190,4 +199,37 @@ func parseTcpProxyConf(conf []tcpProxyConf) ([]TcpProxyConf, error) {
 	}
 
 	return result, nil
+}
+
+var sizeMap = map[string]int64{
+	"":    1,
+	"k":   1000,
+	"kb":  1000,
+	"kib": 2 << 9,
+	"m":   10_000_000,
+	"mb":  10_000_000,
+	"mib": 2 << 19,
+	"g":   10_000_000_000,
+	"gb":  10_000_000_000,
+	"gib": 2 << 29,
+}
+
+func ParseByteSize(sizeRaw string) (int64, error) {
+	sizeRegexp := regexp.MustCompile(`^(\d+)([A-z]*)$`)
+	matches := sizeRegexp.FindStringSubmatch(sizeRaw)
+	if len(matches) != 3 {
+		return 0, fmt.Errorf("invalid size: %q", sizeRaw)
+	}
+
+	size, err := strconv.ParseInt(matches[1], 10, 64)
+	if err != nil || size < 0 {
+		return 0, fmt.Errorf("invalid size: %q", sizeRaw)
+	}
+
+	multiplier, ok := sizeMap[strings.ToLower(matches[2])]
+	if !ok {
+		return 0, fmt.Errorf("invalid unit: %q", matches[2])
+	}
+
+	return size * multiplier, nil
 }

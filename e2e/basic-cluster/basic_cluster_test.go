@@ -1,6 +1,7 @@
 package basic_cluster_test
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"net/netip"
@@ -66,6 +67,46 @@ var _ = Describe("Ingress", func() {
 				resp, err := q.RoundTrip(req)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+			})
+		})
+	})
+
+	Describe("Limiting body size", func() {
+		q := common.GetQuicTransport(quicEndpoint)
+		Context("with an Ingress limit 1K", func() {
+			It("should be ok for 900B", func() {
+				buff := bytes.NewBuffer(make([]byte, 900))
+				req, err := http.NewRequest(http.MethodGet, "https://example.com/limited", buff)
+				Expect(err).ToNot(HaveOccurred())
+				resp, err := q.RoundTrip(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+			})
+			It("should not be ok for 2K", func() {
+				buff := bytes.NewBuffer(make([]byte, 2000))
+				req, err := http.NewRequest(http.MethodGet, "https://example.com/limited", buff)
+				Expect(err).ToNot(HaveOccurred())
+				resp, err := q.RoundTrip(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(resp.StatusCode).To(Not(Equal(http.StatusOK)))
+			})
+		})
+		Context("without an Ingress limit", func() {
+			It("should be ok for 2K", func() {
+				buff := bytes.NewBuffer(make([]byte, 2000))
+				req, err := http.NewRequest(http.MethodGet, "https://example.com/", buff)
+				Expect(err).ToNot(HaveOccurred())
+				resp, err := q.RoundTrip(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+			})
+			It("should not be ok for 5K", func() {
+				buff := bytes.NewBuffer(make([]byte, 5000))
+				req, err := http.NewRequest(http.MethodGet, "https://example.com/", buff)
+				Expect(err).ToNot(HaveOccurred())
+				resp, err := q.RoundTrip(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(resp.StatusCode).To(Not(Equal(http.StatusOK)))
 			})
 		})
 	})

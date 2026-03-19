@@ -14,3 +14,22 @@ spec:
                 name: example-service
                 port:
                   number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress-limited
+  annotations:
+    s-ingress.oidq.dev/max-body: "1K"
+spec:
+  ingressClassName: s-ingress
+  rules:
+    - http:
+        paths:
+          - pathType: Prefix
+            path: /limited
+            backend:
+              service:
+                name: example-service
+                port:
+                  number: 8080

@@ -116,12 +116,7 @@ func proxyRoute(rCtx *RequestContext, endpoint *RouteConfig) error {
 		return err
 	}
 
-	var writer io.ReadCloser
-	if rCtx.routingConfig.MaxBodySize > 0 {
-		writer = http.MaxBytesReader(rCtx.originalWriter, rCtx.R.Body, rCtx.routingConfig.MaxBodySize)
-	} else {
-		writer = rCtx.R.Body
-	}
+	writer := http.MaxBytesReader(rCtx.originalWriter, rCtx.R.Body, endpoint.HttpProxyConfig.MaxBodySize)
 	defer writer.Close()
 
 	proxiedR, err := http.NewRequestWithContext(rCtx.R.Context(), rCtx.R.Method, u.String(), writer)

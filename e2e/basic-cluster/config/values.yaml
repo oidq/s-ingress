@@ -10,6 +10,9 @@ ingressClass:
 
 tcpProxy: []
 
+proxy:
+  maxBodySize: "4K"
+
 configuration:
   tls:
     defaultTlsSecret: "s-ingress-tls"

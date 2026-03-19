@@ -40,9 +40,6 @@ type RoutingConfig struct {
 	// has not been made yet and some fields of the context will not be initialized.
 	RequestMiddlewares []MiddlewareFunc
 
-	// MaxBodySize is the default maximum allowed size of body.
-	MaxBodySize int64
-
 	// TrustedProxies is the list of trusted proxies IP addresses in respect to X-Forwarded-For.
 	TrustedProxies []netip.Prefix
 
@@ -132,6 +129,8 @@ type RouteConfig struct {
 
 	Middlewares []MiddlewareFunc
 
+	HttpProxyConfig HttpProxyConfig
+
 	IngressName string
 }
 
@@ -147,6 +146,12 @@ func (rc *RouteConfig) MatchesPath(rawPath string) bool {
 	default:
 		panic("invalid path type")
 	}
+}
+
+// HttpProxyConfig is a configuration of an upstream proxying
+type HttpProxyConfig struct {
+	// MaxBodySize is the maximum allowed size of body.
+	MaxBodySize int64
 }
 
 type TcpProxyConfig struct {
