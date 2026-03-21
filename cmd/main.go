@@ -83,6 +83,13 @@ func main() {
 		}
 	}()
 
+	mgr.GetCache().WaitForCacheSync(ctx)
+	err = c.Init(ctx)
+	if err != nil {
+		l.Error("unable to initialize controller", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
 	wg.Go(func() {
 		c.Run(ctx)
 	})

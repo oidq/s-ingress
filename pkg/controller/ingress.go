@@ -39,15 +39,19 @@ func (ic *IngressController) getUpstreamIpAddresses(ctx context.Context, conf *c
 }
 
 func (ic *IngressController) ReconcileIngress(ctx context.Context, name types.NamespacedName, ingress *netv1.Ingress) error {
+	state := ic.k8sState
+	state.Lock()
+	defer state.Unlock()
+
 	if ingress == nil { // ingress deleted
-		isRelevant := ic.k8sState.removeIngress(name)
+		isRelevant := state.removeIngress(name)
 		ic.RequestReconfigureWhenRelevant(isRelevant)
 		return nil
 	}
 
-	isRelevant := ic.k8sState.isIngressRelevant(ingress)
+	isRelevant := state.isIngressRelevant(ingress)
 	if !isRelevant {
-		wasRelevant := ic.k8sState.markIngressIrrelevant(ingress)
+		wasRelevant := state.markIngressIrrelevant(ingress)
 		ic.RequestReconfigureWhenRelevant(wasRelevant)
 		return nil
 	}
@@ -60,7 +64,7 @@ func (ic *IngressController) ReconcileIngress(ctx context.Context, name types.Na
 	}
 
 	ic.log.Info("reconciling ingress", "ingress", ingress.Name)
-	ic.k8sState.updateIngress(&IngressEntry{
+	state.updateIngress(&IngressEntry{
 		Ingress:       ingress,
 		Configuration: ingressConfig,
 	})
@@ -73,27 +77,30 @@ func (ic *IngressController) ReconcileIngress(ctx context.Context, name types.Na
 }
 
 func (ic *IngressController) RemoveIngressClass(name string) {
-	ic.k8sState.Lock()
-	defer ic.k8sState.Unlock()
+	state := ic.k8sState
+	state.Lock()
+	defer state.Unlock()
 
-	if _, ok := ic.k8sState.controllerClasses[name]; ok {
-		delete(ic.k8sState.controllerClasses, name)
+	if _, ok := state.controllerClasses[name]; ok {
+		delete(state.controllerClasses, name)
 		ic.log.Info("removing ingress class", slog.String("ingressClass", name))
 		ic.RequestReconfigure()
 	}
 }
 
 func (ic *IngressController) AddIngressClass(ingClass *netv1.IngressClass) {
+	state := ic.k8sState
+	state.Lock()
+	defer state.Unlock()
+
 	name := ingClass.Name
 
-	ic.k8sState.Lock()
-	if _, ok := ic.k8sState.controllerClasses[name]; !ok {
+	if _, ok := state.controllerClasses[name]; !ok {
 		ic.log.Info("adding ingress class", slog.String("ingressClass", name))
 	} else {
 		ic.log.Info("updating ingress class", slog.String("ingressClass", name))
 	}
-	ic.k8sState.controllerClasses[name] = ingClass
-	ic.k8sState.Unlock()
+	state.controllerClasses[name] = ingClass
 
 	ic.RequestReconfigure()
 }

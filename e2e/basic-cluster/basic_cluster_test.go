@@ -27,7 +27,7 @@ func TestE2e(t *testing.T) {
 	RunSpecs(t, "E2e Suite")
 }
 
-var _ = Describe("Ingress", func() {
+var _ = Describe("Ingress controller", func() {
 	Describe("Serving on HTTP", func() {
 		t := common.GetHttpTransport(httpEndpoint)
 		It("should redirect to https", func() {
@@ -129,4 +129,46 @@ var _ = Describe("Ingress", func() {
 		})
 	})
 
+	Describe("reconciling annotations", func() {
+		BeforeEach(func() {
+			common.ApplyIngress(`
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: deny-route-test
+spec:
+  ingressClassName: s-ingress
+  rules:
+    - http:
+        paths:
+          - pathType: Prefix
+            path: /deny-route
+            backend:
+              service:
+                name: example-service
+                port:
+                  number: 8080
+---
+			`)
+		})
+		It("should reconcile on deny-route change", func() {
+			Eventually(func(g Gomega) {
+				req := common.NewRequest(http.MethodGet, "https://example.com/deny-route", nil)
+				resp := common.RoundTripQuic(quicEndpoint, req)
+				g.Expect(resp.StatusCode).To(Equal(http.StatusOK))
+			}).Should(Succeed(), "deny-route without annotations")
+
+			common.PatchIngress(
+				"deny-route-test",
+				`{"metadata": {"annotations": {"s-ingress.oidq.dev/deny-route": "^/"}}}`,
+			)
+
+			Eventually(func(g Gomega) {
+				req := common.NewRequest(http.MethodGet, "https://example.com/deny-route", nil)
+				resp := common.RoundTripQuic(quicEndpoint, req)
+				g.Expect(resp.StatusCode).To(Equal(http.StatusForbidden))
+			}).Should(Succeed(), "deny-route with annotations")
+		})
+	})
 })

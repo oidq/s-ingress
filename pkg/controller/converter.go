@@ -218,8 +218,6 @@ func (ic *IngressController) reconcileIngress(ctx context.Context, ingress *netv
 // ensureActiveIngressStatus updates the ingress object to have load balancer status set.
 func (ic *IngressController) ensureActiveIngressStatus(ctx context.Context, ingress *netv1.Ingress) {
 	state := ic.k8sState
-	state.RLock()
-	defer state.RUnlock()
 
 	if state.config.DisableStatusUpdate {
 		return

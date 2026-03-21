@@ -138,7 +138,14 @@ func setupTestContext(t *testing.T, nsName string, controllerName string, contro
 		t.Fatalf("failed to setup controller with manager: %v", err)
 	}
 	controller.SetReconfigureChan(p.ConfigChan())
-	controller.Run(ctx)
+	err = controller.Init(ctx)
+	if err != nil {
+		t.Fatalf("failed to initialize controller: %v", err)
+	}
+
+	go func() {
+		controller.Run(ctx)
+	}()
 
 	go func() {
 		if err := mgr.Start(ctx); err != nil {

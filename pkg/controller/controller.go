@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -68,34 +69,41 @@ func (ic *IngressController) RequestReconfigureWhenRelevant(relevant bool) {
 		ic.RequestReconfigure()
 	}
 }
+func (ic *IngressController) Init(ctx context.Context) error {
+	err := ic.reconfigureControllerCommonConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get initial config: %w", err)
+	}
+
+	return nil
+}
 
 func (ic *IngressController) Run(ctx context.Context) {
-	ic.reconfigureControllerCommonConfig(ctx)
+	ticker := time.NewTicker(10 * time.Second)
 
-	go func() {
-		ticker := time.NewTicker(10 * time.Second)
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ic.requestReconcileCommonChan:
-				ic.log.Info("reconcile common")
-				ic.reconfigureControllerCommonConfig(ctx)
-			case <-ic.requestReconfigureChan:
-				ic.log.Info("reconfigure")
-				conf, err := ic.getProxyConfig()
-				if err != nil {
-					ic.log.Error("failed to get proxy config", slog.String("err", err.Error()))
-				}
-
-				if ic.reconfigureChan != nil {
-					ic.reconfigureChan <- conf
-				}
-			case <-ticker.C:
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ic.requestReconcileCommonChan:
+			ic.log.Info("reconcile common")
+			err := ic.reconfigureControllerCommonConfig(ctx)
+			if err != nil {
+				ic.log.Error("failed to reconcile common resources", slog.String("err", err.Error()))
 			}
+		case <-ic.requestReconfigureChan:
+			ic.log.Info("reconfigure")
+			conf, err := ic.getProxyConfig()
+			if err != nil {
+				ic.log.Error("failed to get proxy config", slog.String("err", err.Error()))
+			}
+
+			if ic.reconfigureChan != nil {
+				ic.reconfigureChan <- conf
+			}
+		case <-ticker.C:
 		}
-	}()
+	}
 }
 
 func (ic *IngressController) requestReconfigure() {
@@ -105,27 +113,27 @@ func (ic *IngressController) requestReconfigure() {
 	}
 }
 
-func (ic *IngressController) reconfigureControllerCommonConfig(ctx context.Context) {
+func (ic *IngressController) reconfigureControllerCommonConfig(ctx context.Context) error {
 	err := ic.updateConfig(ctx)
 	if err != nil {
-		ic.log.Error("unable to update controller config", slog.String("error", err.Error()))
-		// TODO: this is fatal on startup
+		return fmt.Errorf("update config: %w", err)
 	}
 
 	err = ic.updateDefaultTls(ctx)
 	if err != nil {
-		ic.log.Error("unable to update default tls", slog.String("error", err.Error()))
+		return fmt.Errorf("update default TLS: %w", err)
 	}
 
 	err = ic.updateUpstreamIpAddress(ctx)
 	if err != nil {
-		ic.log.Error("unable to update upstream ip address", slog.String("error", err.Error()))
+		return fmt.Errorf("update upstream IP: %w", err)
 	}
 
 	err = ic.updateTcpProxy(ctx)
 	if err != nil {
-		ic.log.Error("unable to update tcp proxies", slog.String("error", err.Error()))
+		return fmt.Errorf("update tcp proxies: %w", err)
 	}
 
 	ic.requestReconfigure()
+	return nil
 }

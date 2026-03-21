@@ -40,9 +40,6 @@ func isIngressRelevant(s *k8sState, ingress *netv1.Ingress) bool {
 }
 
 func (s *k8sState) isIngressRelevant(ingress *netv1.Ingress) bool {
-	s.RLock()
-	defer s.RUnlock()
-
 	return isIngressRelevant(s, ingress)
 }
 
@@ -51,17 +48,11 @@ func objectMetaToNamespaced(obj metav1.Object) types.NamespacedName {
 }
 
 func (s *k8sState) updateIngress(ingressConfig *IngressEntry) {
-	s.Lock()
-	defer s.Unlock()
-
 	namespaced := objectMetaToNamespaced(ingressConfig.Ingress)
 	s.ingresses[namespaced] = ingressConfig
 }
 
 func (s *k8sState) markIngressIrrelevant(ingress *netv1.Ingress) bool {
-	s.Lock()
-	defer s.Unlock()
-
 	namespaced := objectMetaToNamespaced(ingress)
 	entry, ok := s.ingresses[namespaced]
 	if !ok {
@@ -81,9 +72,6 @@ func (s *k8sState) markIngressIrrelevant(ingress *netv1.Ingress) bool {
 }
 
 func (s *k8sState) removeIngress(namespaced types.NamespacedName) bool {
-	s.Lock()
-	defer s.Unlock()
-
 	entry, ok := s.ingresses[namespaced]
 	if !ok {
 		return false
