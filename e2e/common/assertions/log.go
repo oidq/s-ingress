@@ -11,8 +11,7 @@ import (
 )
 
 func ExpectIngressLog(name string, substring string) Assertion {
-	client := common.GetClient()
-	lines := common.GetIngressLogLine(client, name, substring)
+	lines := common.GetIngressLogLine(name, substring)
 	Expect(lines).To(HaveLen(1), "Substring matched multiple lines in %q logs", name)
 
 	return Expect(lines[0])

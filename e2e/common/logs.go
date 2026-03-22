@@ -65,7 +65,7 @@ func getIngressLogLine(client *kubernetes.Clientset, name string, substring stri
 	return lines, nil
 }
 
-func GetIngressLogLine(client *kubernetes.Clientset, name string, substring string) []string {
+func GetIngressLogLine(name string, substring string) []string {
 	lines, err := getIngressLogLine(client, name, substring)
 	Expect(err).ToNot(HaveOccurred())
 
