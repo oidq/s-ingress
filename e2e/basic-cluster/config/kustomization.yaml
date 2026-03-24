@@ -17,3 +17,4 @@ resources:
   - example_service.yaml
   - s-ingress-tls.yaml
   - namespace.yaml
+  - secrets.yaml

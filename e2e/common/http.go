@@ -9,12 +9,12 @@ import (
 )
 
 var httpTransport http.RoundTripper
-var httpsTransport http.RoundTripper
+var HttpsTransport http.RoundTripper
 var quicTransport http.RoundTripper
 
 func SetupTransports(httpEndpoint, httpsEndpoint, quicEndpoint netip.AddrPort) {
 	httpTransport = GetHttpTransport(httpEndpoint)
-	httpsTransport = GetHttpsTransport(httpsEndpoint)
+	HttpsTransport = GetHttpsTransport(httpsEndpoint)
 	quicTransport = GetQuicTransport(quicEndpoint)
 }
 
@@ -32,7 +32,7 @@ func RoundTripHttp(req *http.Request, optionalDescription ...any) *http.Response
 }
 
 func RoundTripHttps(req *http.Request, optionalDescription ...any) *http.Response {
-	resp, err := httpsTransport.RoundTrip(req)
+	resp, err := HttpsTransport.RoundTrip(req)
 	Expect(err).ToNot(HaveOccurred(), optionalDescription...)
 
 	return resp

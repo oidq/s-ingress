@@ -21,6 +21,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
+import _ "golang.org/x/crypto/x509roots/fallback"
+
 func main() {
 	slogHandler := initSlogHandler()
 	l := slog.New(slogHandler)

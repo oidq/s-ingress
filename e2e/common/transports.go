@@ -8,12 +8,27 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
+	"strings"
 
 	_ "embed"
 
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 )
+
+var localSuffixes = []string{
+	"example.com",
+	"test.com",
+}
+
+func isLocalHost(host string) bool {
+	for _, suffix := range localSuffixes {
+		if strings.HasSuffix(host, suffix) {
+			return true
+		}
+	}
+	return false
+}
 
 func GetHttpTransport(httpAddr netip.AddrPort) *http.Transport {
 	dialer := &net.Dialer{}
@@ -36,13 +51,19 @@ func GetHttpsTransport(httpsAddr netip.AddrPort) *http.Transport {
 	transport := &http.Transport{
 		DisableKeepAlives: true,
 		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			conn, err := netDialer.DialContext(ctx, network, httpsAddr.String())
-			if err != nil {
-				return nil, fmt.Errorf("failed to dial https endpoint: %w", err)
-			}
 			host, _, err := net.SplitHostPort(addr)
 			if err != nil {
 				return nil, fmt.Errorf("failed to split host and port: %v", err)
+			}
+
+			if !isLocalHost(host) {
+				dialer := &tls.Dialer{}
+				return dialer.DialContext(ctx, network, addr)
+			}
+
+			conn, err := netDialer.DialContext(ctx, network, httpsAddr.String())
+			if err != nil {
+				return nil, fmt.Errorf("failed to dial https endpoint: %w", err)
 			}
 			return tls.Client(conn, &tls.Config{
 				RootCAs:    rootCas,

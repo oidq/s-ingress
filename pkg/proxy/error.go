@@ -28,6 +28,9 @@ func (r *RequestContext) HandleErrorf(status int, format string, args ...any) er
 
 func (r *RequestContext) handleErrorPage(status int, msg string) error {
 	r.W.WriteHeader(status)
+	if r.R.Method == http.MethodHead {
+		return nil
+	}
 
 	errPage := r.routingConfig.ErrorPage
 	if errPage == nil {

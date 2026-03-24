@@ -61,6 +61,14 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err := callMiddleware(rCtx, routingConfig.RequestMiddlewares, handleHttp)
 	if err != nil {
 		l.Log(rCtx, slog.LevelError, "failed to proxy", slog.String("err", err.Error()))
+		if rCtx.writer.writtenStatusCode == 0 {
+			err := rCtx.HandleErrorf(http.StatusInternalServerError, "failed to proxy: %v", err)
+			if err != nil {
+				l.Log(rCtx, slog.LevelError, "failed to write internal error response",
+					slog.String("err", err.Error()),
+				)
+			}
+		}
 	}
 
 	duration := time.Since(t0)

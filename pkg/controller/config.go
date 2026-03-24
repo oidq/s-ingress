@@ -40,7 +40,7 @@ func (ic *IngressController) getControllerConfig(ctx context.Context) (*config.C
 	for _, module := range modules.Modules {
 		mod, err := module(ctx, reconciler, conf)
 		if err != nil {
-			return nil, fmt.Errorf("error creating module %T: %w", mod, err)
+			return nil, fmt.Errorf("error creating module %T: %w", module, err)
 		}
 		conf.Modules = append(conf.Modules, mod)
 	}

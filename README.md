@@ -71,6 +71,35 @@ Some aspects of the proxying can be manipulated per Ingress object with Kubernet
 s-ingress.oidq.dev/max-body: "4KiB"
 ```
 
+#### OIDC
+
+> [!WARNING]
+> 🚧 OIDC module is highly experimental. 🚧
+
+S-Ingress supports experimental OIDC authentication.
+The module will enforce authentication of all requests with OpenID Connect.
+For details regarding global configuration see [config.yaml](./pkg/config/config.yaml).
+
+```yaml
+# Name of the OIDC client specified in config.
+s-ingress.oidq.dev/oidc: "mySso"
+
+# Group required to access the given ingress. If more groups are
+# specified, the client must be part of at least one of them.
+s-ingress.oidq.dev/oidc-require-group: "admin,moderator"
+
+# Email (from OIDC claim) required to access the given ingress.
+# More emails can be specified to allow multiple accounts to connect.
+s-ingress.oidq.dev/oidc-require-email: "oidq@oidq.dev"
+```
+
+> [!NOTE]
+> If both email and group annotation are specified, 
+> the client must match either email or group requirement.
+> If none of the "require" annotations are specified,
+> any authenticated user is allowed to access the ingress.
+
+
 #### Auth
 
 ##### IP Authorization

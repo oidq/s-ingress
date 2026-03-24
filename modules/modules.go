@@ -3,6 +3,7 @@ package modules
 import (
 	"codeberg.org/oidq/s-ingress/modules/auth"
 	"codeberg.org/oidq/s-ingress/modules/headers"
+	"codeberg.org/oidq/s-ingress/modules/oidc"
 	"codeberg.org/oidq/s-ingress/modules/security"
 	"codeberg.org/oidq/s-ingress/modules/websocket"
 	"codeberg.org/oidq/s-ingress/pkg/config"
@@ -15,6 +16,7 @@ var Modules = []config.ModuleCreator{
 	auth.ModuleIpAuth,
 	auth.ModuleBasicAuth,
 	auth.ModuleSubrequestAuth,
+	oidc.ModuleOidc,
 	security.ModuleDenyRoute,
 	websocket.ModuleWebsocket,
 

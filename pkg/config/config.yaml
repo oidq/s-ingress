@@ -25,6 +25,23 @@ module:
       #  authUrl: http://oauth2-proxy-int.s-ingress-int.svc.int.k8s.oidq.dev/_oauth2/auth
       #  signInUrl: https://auth.int.oidq.dev/_oauth2/start?rd=https%3A%2F%2F$host$escaped_uri
 
+  # Experimental OIDC module
+  oidc:
+    clients: {}
+#      mySso: # name of the client
+#        discoveryUrl: "https://mysso.example"
+#        # Domain used for OIDC authorization callbacks.
+#        callbackDomain: "callback.domain.example"
+#        # Name of the OIDC secret in ingress namespace.
+#        # The secret must include following keys: CLIENT_ID, CLIENT_SECRET, JWT_SECRET
+#        clientSecretName: "oidc"
+#        # Domain of the OIDC cookie, should span all ingresses with oidc enabled.
+#        cookieDomain: ".domain.example"
+#        # Expiration of the authorization. If empty, the module will
+#        # use access/refresh token expiration.
+#        authExpiration: ""
+
+
 # Proxy-related configuration.
 proxy:
   # Error page template, see pkg/proxy/error.go for details about the structure passwd to html/template.
