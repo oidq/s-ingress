@@ -1,6 +1,7 @@
 package security
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -17,9 +18,9 @@ type enforceHttpsModule struct {
 	defaultEnforceHttps bool
 }
 
-func ModuleEnforceHttps(config *config.ControllerConf) (config.ModuleInstance, error) {
+func ModuleEnforceHttps(ctx context.Context, reconciler config.ModuleReconciler, conf *config.ControllerConf) (config.ModuleInstance, error) {
 	var moduleConf ModuleConfig
-	err := config.GetModuleConf("security", &moduleConf)
+	err := conf.GetModuleConf("security", &moduleConf)
 	if err != nil {
 		return &enforceHttpsModule{}, fmt.Errorf("error decoding module config: %w", err)
 	}
@@ -44,7 +45,7 @@ func (wm *enforceHttpsModule) RequestMiddleware() (proxy.MiddlewareFunc, error) 
 	}, nil
 }
 
-func (wm *enforceHttpsModule) IngressMiddleware(reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
+func (wm *enforceHttpsModule) IngressMiddleware(ctx context.Context, reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
 	doRedirect := wm.defaultEnforceHttps
 	if ingress.Annotations[enforceHttpsAnnotation] == "true" {
 		doRedirect = true

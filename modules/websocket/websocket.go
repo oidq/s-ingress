@@ -22,11 +22,11 @@ type websocketModule struct {
 	config.Module
 }
 
-func ModuleWebsocket(config *config.ControllerConf) (config.ModuleInstance, error) {
+func ModuleWebsocket(ctx context.Context, reconciler config.ModuleReconciler, conf *config.ControllerConf) (config.ModuleInstance, error) {
 	return &websocketModule{}, nil
 }
 
-func (wm *websocketModule) IngressMiddleware(reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
+func (wm *websocketModule) IngressMiddleware(ctx context.Context, reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
 	return func(rCtx *proxy.RequestContext, next proxy.NextFunc) error {
 		if isWebSocketConnection(rCtx) {
 			return handleWebSocket(rCtx, rCtx.UpstreamRequest.URL)

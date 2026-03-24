@@ -20,7 +20,7 @@ type ControllerConf struct {
 
 	TcpProxy []TcpProxyConf
 
-	// Tls is configuration of the TLS negotiation logic.
+	// Tls is a configuration of the TLS negotiation logic.
 	Tls ControllerTlsConf
 
 	// GeneralProxy
@@ -32,11 +32,14 @@ type ControllerConf struct {
 	// Most of the settings are passed to IngressProxyConf // TODO
 	IngressProxy IngressProxyConf
 
-	// Modules are list of modules that are used to process the request.
+	// Modules is a list of modules that are used to process the request.
 	Modules []ModuleInstance
 
-	// ModuleConfigs is map of module configurations.
+	// ModuleConfigs is a map of module configurations.
 	ModuleConfigs map[string]yaml.Node
+
+	// UsedSecrets is an array of secrets used in a creation of the [ControllerConf].
+	UsedSecrets []types.NamespacedName
 
 	// ErrorPage is the template used to render custom error pages for HTTP responses.
 	ErrorPage template.Template

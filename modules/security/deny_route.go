@@ -1,6 +1,7 @@
 package security
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 
@@ -15,17 +16,11 @@ type denyRouteModule struct {
 	config.Module
 }
 
-func ModuleDenyRoute(config *config.ControllerConf) (config.ModuleInstance, error) {
-	var moduleConf ModuleConfig
-	err := config.GetModuleConf("security", &moduleConf)
-	if err != nil {
-		return nil, fmt.Errorf("error decoding module config: %w", err)
-	}
-
+func ModuleDenyRoute(ctx context.Context, reconciler config.ModuleReconciler, conf *config.ControllerConf) (config.ModuleInstance, error) {
 	return &denyRouteModule{}, nil
 }
 
-func (dm *denyRouteModule) IngressMiddleware(reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
+func (dm *denyRouteModule) IngressMiddleware(ctx context.Context, reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
 	denyAnnotation := ingress.Annotations[denyRouteAnnotation]
 	if denyAnnotation == "" {
 		return nil, nil

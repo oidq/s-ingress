@@ -37,9 +37,9 @@ type ingressReconciler struct {
 	k8sClient   client.Client
 }
 
-func (i *ingressReconciler) GetSecret(secret types.NamespacedName) (*v1.Secret, error) {
+func (i *ingressReconciler) GetSecret(ctx context.Context, secret types.NamespacedName) (*v1.Secret, error) {
 	s := &v1.Secret{}
-	err := i.k8sClient.Get(i.ctx, secret, s)
+	err := i.k8sClient.Get(ctx, secret, s)
 	if err != nil {
 		return nil, fmt.Errorf("error getting secret %s: %v", secret, err)
 	}
@@ -377,7 +377,7 @@ func getMiddlewares(
 	}
 
 	for _, m := range conf.Modules {
-		middleware, err := m.IngressMiddleware(&reconciler, ingress)
+		middleware, err := m.IngressMiddleware(ctx, &reconciler, ingress)
 		if err != nil {
 			return nil, err
 		}

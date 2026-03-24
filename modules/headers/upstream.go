@@ -1,6 +1,7 @@
 package headers
 
 import (
+	"context"
 	"strings"
 
 	"codeberg.org/oidq/s-ingress/pkg/config"
@@ -14,11 +15,11 @@ type upstreamHeaderModule struct {
 	config.Module
 }
 
-func ModuleUpstreamHeader(config *config.ControllerConf) (config.ModuleInstance, error) {
+func ModuleUpstreamHeader(ctx context.Context, reconciler config.ModuleReconciler, conf *config.ControllerConf) (config.ModuleInstance, error) {
 	return &upstreamHeaderModule{}, nil
 }
 
-func (uhm *upstreamHeaderModule) IngressMiddleware(reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
+func (uhm *upstreamHeaderModule) IngressMiddleware(ctx context.Context, reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
 	customHeadersRaw := ingress.Annotations[headersUpstreamAnnotations]
 	if customHeadersRaw == "" {
 		return nil, nil

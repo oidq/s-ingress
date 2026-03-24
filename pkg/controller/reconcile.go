@@ -49,19 +49,23 @@ func (ic *IngressController) SetupWithManager(mgr ctrl.Manager, name string) err
 }
 
 func (ic *IngressController) Reconcile(ctx context.Context, req reconcile.Request) (ctrl.Result, error) {
+	if ic.k8sState.config == nil {
+		return reconcile.Result{RequeueAfter: 1 * time.Second}, nil
+	}
+
 	ingress := &netv1.Ingress{}
 	err := ic.k8sClient.Get(ctx, req.NamespacedName, ingress)
 	switch {
 	case errors.IsNotFound(err):
-		// ingress class was removed
+		// ingress was removed
 		ingress = nil
 	case err != nil:
-		return reconcile.Result{RequeueAfter: time.Minute}, err
+		return reconcile.Result{}, err
 	}
 
 	err = ic.ReconcileIngress(ctx, req.NamespacedName, ingress)
 	if err != nil {
-		return reconcile.Result{RequeueAfter: time.Minute}, err
+		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil
@@ -84,18 +88,25 @@ func (ic *IngressController) getIngressReconcilesForIngressClasses() handler.Typ
 
 func (ic *IngressController) getIngressReconcilesForSecrets() handler.TypedEventHandler[client.Object, reconcile.Request] {
 	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object client.Object) []reconcile.Request {
+		state := ic.k8sState
+		state.Lock()
+		defer state.Unlock()
+
 		// check changes on default secret
-		if ic.k8sState.config != nil {
-			if object.GetName() == ic.k8sState.config.Tls.DefaultTlsSecret && object.GetNamespace() == ic.envConfig.Namespace {
+		if state.config != nil {
+			if object.GetName() == state.config.Tls.DefaultTlsSecret && object.GetNamespace() == ic.envConfig.Namespace {
 				ic.RequestReconcileCommon()
-				return nil
+			}
+			// secrets used in the common configuration
+			if slices.Contains(state.config.UsedSecrets, objectMetaToNamespaced(object)) {
+				ic.RequestReconcileCommon()
 			}
 		}
 
 		// check secrets on ingres secrets
 		var reconcileRequests []reconcile.Request
 		namespaced := objectMetaToNamespaced(object)
-		for namespacedIngress, ingress := range ic.k8sState.ingresses {
+		for namespacedIngress, ingress := range state.ingresses {
 			ingressConf := ingress.Configuration
 			if ingressConf != nil && slices.Contains(ingressConf.UsedSecrets, namespaced) {
 				reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: namespacedIngress})
@@ -108,6 +119,10 @@ func (ic *IngressController) getIngressReconcilesForSecrets() handler.TypedEvent
 
 func (ic *IngressController) getIngressReconcilesForConfigMaps() handler.TypedEventHandler[client.Object, reconcile.Request] {
 	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object client.Object) []reconcile.Request {
+		state := ic.k8sState
+		state.Lock()
+		defer state.Unlock()
+
 		// check changes on default secret
 		namespacedCm := objectMetaToNamespaced(object)
 		if namespacedCm == ic.envConfig.ControllerConfigMap {
@@ -118,7 +133,7 @@ func (ic *IngressController) getIngressReconcilesForConfigMaps() handler.TypedEv
 		// check secrets on ingres secrets
 		var reconcileRequests []reconcile.Request
 		namespaced := objectMetaToNamespaced(object)
-		for namespacedIngress, ingress := range ic.k8sState.ingresses {
+		for namespacedIngress, ingress := range state.ingresses {
 			ingressConf := ingress.Configuration
 			if ingressConf != nil && slices.Contains(ingressConf.UsedConfigMaps, namespaced) {
 				reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: namespacedIngress})
@@ -131,11 +146,15 @@ func (ic *IngressController) getIngressReconcilesForConfigMaps() handler.TypedEv
 
 func (ic *IngressController) getIngressReconcilesForServices() handler.TypedEventHandler[client.Object, reconcile.Request] {
 	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object client.Object) []reconcile.Request {
+		state := ic.k8sState
+		state.Lock()
+		defer state.Unlock()
+
 		// check changes on upstream svc
-		conf := ic.k8sState.config
+		conf := state.config
 		if conf != nil && conf.UpstreamServiceName != nil {
 			namespacedSvc := objectMetaToNamespaced(object)
-			namespacedUpstreamSvc := types.NamespacedName{Name: *ic.k8sState.config.UpstreamServiceName, Namespace: ic.envConfig.Namespace}
+			namespacedUpstreamSvc := types.NamespacedName{Name: *state.config.UpstreamServiceName, Namespace: ic.envConfig.Namespace}
 			if namespacedSvc == namespacedUpstreamSvc {
 				ic.RequestReconcileCommon()
 				return nil
@@ -145,7 +164,7 @@ func (ic *IngressController) getIngressReconcilesForServices() handler.TypedEven
 		// check services on ingresses
 		var reconcileRequests []reconcile.Request
 		namespaced := objectMetaToNamespaced(object)
-		for namespacedIngress, ingress := range ic.k8sState.ingresses {
+		for namespacedIngress, ingress := range state.ingresses {
 			ingressConf := ingress.Configuration
 			if ingressConf != nil && slices.Contains(ingressConf.UsedServices, namespaced) {
 				reconcileRequests = append(reconcileRequests, reconcile.Request{NamespacedName: namespacedIngress})

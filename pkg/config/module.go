@@ -1,6 +1,8 @@
 package config
 
 import (
+	"context"
+
 	"codeberg.org/oidq/s-ingress/pkg/proxy"
 	v1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
@@ -11,7 +13,7 @@ import (
 // on the provided config. This is the actual entrypoint of each module and is run
 // with a current [*ControllerConf]. Beware that the [ModuleInstance] can be replaced
 // anytime on config reconciliation.
-type ModuleCreator = func(conf *ControllerConf) (ModuleInstance, error)
+type ModuleCreator = func(ctx context.Context, reconciler ModuleReconciler, conf *ControllerConf) (ModuleInstance, error)
 
 // ModuleInstance is an interface matching the actual module instance. All the methods
 // are called in the configuration phase, only the returned functions will be run in the proxy.
@@ -27,7 +29,7 @@ type ModuleInstance interface {
 
 	// IngressMiddleware returns [proxy.MiddlewareFunc] for given [*netv1.Ingress] that is run on
 	// each request which would be proxied to the Ingress endpoints.
-	IngressMiddleware(reconciler IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error)
+	IngressMiddleware(ctx context.Context, reconciler IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error)
 
 	// implementsModuleInstance is a method to verify that all implementations of [ModuleInstance]
 	// embed [Module] to make extending the [ModuleInstance] easier.
@@ -43,7 +45,7 @@ func (e Module) RequestMiddleware() (proxy.MiddlewareFunc, error) {
 }
 
 // IngressMiddleware provides default implementation of [ModuleInstance].
-func (e Module) IngressMiddleware(reconciler IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
+func (e Module) IngressMiddleware(ctx context.Context, reconciler IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
 	return nil, nil
 }
 
@@ -59,5 +61,14 @@ var _ ModuleInstance = Module{}
 // K8s API, but assures that if some object is used during config, the Ingress will be
 // reconciled on change of the object.
 type IngressReconciler interface {
-	GetSecret(secret types.NamespacedName) (*v1.Secret, error)
+	GetSecret(ctx context.Context, secret types.NamespacedName) (*v1.Secret, error)
+}
+
+// ModuleReconciler is an interface that provides access to some further information
+// in the initial phase of the module. It proxies the requests directly to the
+// K8s API, but assures that if some object is used during config, the Module will be
+// reconfigured.
+type ModuleReconciler interface {
+	GetSecret(ctx context.Context, secret types.NamespacedName) (*v1.Secret, error)
+	GetNamespace() string
 }

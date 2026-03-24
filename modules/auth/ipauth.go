@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net/netip"
 	"strings"
@@ -16,11 +17,11 @@ type ipAuthModule struct {
 	config.Module
 }
 
-func ModuleIpAuth(config *config.ControllerConf) (config.ModuleInstance, error) {
+func ModuleIpAuth(ctx context.Context, reconciler config.ModuleReconciler, conf *config.ControllerConf) (config.ModuleInstance, error) {
 	return &ipAuthModule{}, nil
 }
 
-func (ipm *ipAuthModule) IngressMiddleware(reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
+func (ipm *ipAuthModule) IngressMiddleware(ctx context.Context, reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
 	authUrlRaw, ok := ingress.Annotations[authIpAllowlist]
 	if !ok {
 		return nil, nil

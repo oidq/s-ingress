@@ -42,10 +42,11 @@ type RequestContext struct {
 	// UpstreamAddress is the address of the upstream to which the request is going to be proxied.
 	UpstreamAddress netip.AddrPort
 
-	routingConfig  *RoutingConfig
-	writer         *ResponseWriter
-	originalWriter http.ResponseWriter
-	responseHeader http.Header
+	routingConfig   *RoutingConfig
+	writer          *ResponseWriter
+	originalWriter  http.ResponseWriter
+	responseHeader  http.Header
+	responseCookies []*http.Cookie
 }
 
 func (r *RequestContext) Deadline() (deadline time.Time, ok bool) {
@@ -70,6 +71,14 @@ func (r *RequestContext) ResponseHeader() http.Header {
 	}
 
 	return r.responseHeader
+}
+
+// SetResponseCookie sets a cookie on the response returned from upstream.
+//
+// This is only applicable when the request is actually proxied, some middlewares
+// may handle the response themselves.
+func (r *RequestContext) SetResponseCookie(cookie *http.Cookie) {
+	r.responseCookies = append(r.responseCookies, cookie)
 }
 
 type ResponseWriter struct {

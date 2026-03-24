@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -32,9 +33,9 @@ type ForwardAuthConfig struct {
 	SignInUrl string `yaml:"signInUrl"`
 }
 
-func ModuleSubrequestAuth(config *config.ControllerConf) (config.ModuleInstance, error) {
+func ModuleSubrequestAuth(ctx context.Context, reconciler config.ModuleReconciler, conf *config.ControllerConf) (config.ModuleInstance, error) {
 	var moduleConf ModuleConfig
-	err := config.GetModuleConf("auth", &moduleConf)
+	err := conf.GetModuleConf("auth", &moduleConf)
 	if err != nil {
 		return nil, fmt.Errorf("error decoding module config: %w", err)
 	}
@@ -44,7 +45,7 @@ func ModuleSubrequestAuth(config *config.ControllerConf) (config.ModuleInstance,
 	}, nil
 }
 
-func (sam *subrequestAuthModule) IngressMiddleware(reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
+func (sam *subrequestAuthModule) IngressMiddleware(ctx context.Context, reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
 
 	conf, err := getGlobalConfig(sam.configs, ingress)
 	if err != nil {

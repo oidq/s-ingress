@@ -2,6 +2,7 @@ package auth
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 
 	"codeberg.org/oidq/s-ingress/pkg/config"
@@ -18,11 +19,11 @@ type basicAuthModule struct {
 	config.Module
 }
 
-func ModuleBasicAuth(config *config.ControllerConf) (config.ModuleInstance, error) {
+func ModuleBasicAuth(ctx context.Context, reconciler config.ModuleReconciler, conf *config.ControllerConf) (config.ModuleInstance, error) {
 	return &basicAuthModule{}, nil
 }
 
-func (ipm *basicAuthModule) IngressMiddleware(reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
+func (ipm *basicAuthModule) IngressMiddleware(ctx context.Context, reconciler config.IngressReconciler, ingress *netv1.Ingress) (proxy.MiddlewareFunc, error) {
 	realm, ok := ingress.Annotations[authBasicAuthRealm]
 	if !ok {
 		return nil, nil
@@ -33,7 +34,7 @@ func (ipm *basicAuthModule) IngressMiddleware(reconciler config.IngressReconcile
 		return nil, nil
 	}
 
-	secret, err := reconciler.GetSecret(types.NamespacedName{Name: secretRaw, Namespace: ingress.Namespace})
+	secret, err := reconciler.GetSecret(ctx, types.NamespacedName{Name: secretRaw, Namespace: ingress.Namespace})
 	if err != nil {
 		return nil, fmt.Errorf("error getting secret %s: %v", secretRaw, err)
 	}

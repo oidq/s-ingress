@@ -216,6 +216,12 @@ func setResponseHeaders(rCtx *RequestContext, respHeader http.Header) {
 	for header := range rCtx.responseHeader {
 		rCtx.W.Header().Set(header, rCtx.responseHeader.Get(header))
 	}
+
+	for _, cookie := range rCtx.responseCookies {
+		if v := cookie.String(); v != "" {
+			rCtx.W.Header().Add("Set-Cookie", v)
+		}
+	}
 }
 
 func getUpstreamUrl(rCtx *RequestContext) (*url.URL, error) {
